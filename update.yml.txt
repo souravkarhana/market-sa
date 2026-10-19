@@ -1,0 +1,25 @@
+name: Daily market update
+on:
+  schedule:
+    - cron: "30 13 * * 1-5"      # 7:00 PM IST ... re-tries below
+    - cron: "30 15 * * 1-5"      # 9:00 PM IST (second try)
+  workflow_dispatch:
+  push:
+    paths: ["incoming/**"]
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install requests
+      - run: python daily_update.py
+      - name: Commit changes
+        run: |
+          git config user.name "market-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || (git commit -m "Daily update" && git push)
